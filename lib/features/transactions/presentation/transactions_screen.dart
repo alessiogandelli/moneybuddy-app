@@ -153,21 +153,43 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   }
 
   Widget _buildTransactionList(String type) {
+    // Debug: Print sample transaction to understand data structure
+    if (_transactions.isNotEmpty && type == 'all') {
+      final sample = _transactions.first;
+      print('📊 Sample transaction: direction=${sample.direction}, amount=${sample.amount}, merchant=${sample.merchantName}');
+    }
+    
     // Filter transactions based on type from your API data
     List<Transaction> filteredTransactions = _transactions;
     if (type == 'income') {
-      filteredTransactions = _transactions.where((t) => 
-        t.direction.toLowerCase() == 'credit' || 
-        t.direction.toLowerCase() == 'in' ||
-        t.amount > 0
-      ).toList();
+      // Income: Credit direction OR positive amount (but prioritize direction)
+      filteredTransactions = _transactions.where((t) {
+        final direction = t.direction.toLowerCase();
+        if (direction == 'credit' || direction == 'in') {
+          return true; // Definitely income based on direction
+        }
+        // Only use amount if direction is unclear AND amount is positive
+        if (direction != 'debit' && direction != 'out' && t.amount > 0) {
+          return true;
+        }
+        return false;
+      }).toList();
     } else if (type == 'expenses') {
-      filteredTransactions = _transactions.where((t) => 
-        t.direction.toLowerCase() == 'debit' || 
-        t.direction.toLowerCase() == 'out' ||
-        t.amount < 0
-      ).toList();
+      // Expenses: Debit direction OR negative amount (but prioritize direction)
+      filteredTransactions = _transactions.where((t) {
+        final direction = t.direction.toLowerCase();
+        if (direction == 'debit' || direction == 'out') {
+          return true; // Definitely expense based on direction
+        }
+        // Only use amount if direction is unclear AND amount is negative
+        if (direction != 'credit' && direction != 'in' && t.amount < 0) {
+          return true;
+        }
+        return false;
+      }).toList();
     }
+
+    print('📊 Filtered ${filteredTransactions.length} transactions for $type (total: ${_transactions.length})');
 
     if (filteredTransactions.isEmpty) {
       return Center(
