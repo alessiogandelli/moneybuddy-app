@@ -4,6 +4,7 @@ import '../models/transaction.dart';
 import '../services/transaction_api_service.dart';
 import '../services/mock_transaction_service.dart';
 import '../local/hive_service.dart';
+import '../local/transaction_cache_service.dart';
 
 /// Repository for transaction data management combining API and local storage
 class TransactionRepository {
@@ -49,9 +50,9 @@ class TransactionRepository {
   }) async {
     try {
       // Check cache first if not forcing refresh
-      if (!forceRefresh && await _isCacheValid()) {
-        final cachedTransactions = await _getCachedTransactions();
-        if (cachedTransactions.isNotEmpty) {
+      if (!forceRefresh && TransactionCacheService.isCacheValid()) {
+        final cachedTransactions = TransactionCacheService.getCachedTransactions();
+        if (cachedTransactions != null && cachedTransactions.isNotEmpty) {
           _transactionsStreamController.add(cachedTransactions);
           return cachedTransactions;
         }
@@ -76,8 +77,7 @@ class TransactionRepository {
       }
 
       // Cache the results
-      await _cacheTransactions(transactions);
-      await _updateLastSyncTime();
+      await TransactionCacheService.cacheTransactions(transactions);
 
       // Notify listeners
       _transactionsStreamController.add(transactions);
@@ -87,8 +87,8 @@ class TransactionRepository {
       debugPrint('Error fetching transactions: $e');
       
       // Fallback to cached data if API fails
-      final cachedTransactions = await _getCachedTransactions();
-      if (cachedTransactions.isNotEmpty) {
+      final cachedTransactions = TransactionCacheService.getCachedTransactions();
+      if (cachedTransactions != null && cachedTransactions.isNotEmpty) {
         _transactionsStreamController.add(cachedTransactions);
         return cachedTransactions;
       }

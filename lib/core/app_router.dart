@@ -1,96 +1,99 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../features/onboarding/presentation/onboarding_screen.dart';
+import '../features/insights/presentation/insights_screen.dart';
 import '../features/transactions/presentation/transactions_screen.dart';
 import '../features/transactions/screens/add_transaction_screen.dart';
-import '../features/insights/presentation/insights_screen.dart';
+import '../features/transactions/presentation/transaction_details_screen.dart';
 import '../features/moneyca_chat/presentation/chat_screen.dart';
-import '../shared/widgets/main_navigation.dart';
 import 'routes/app_routes.dart';
 
-/// App router configuration using go_router
+/// Simplified app router - directly to insights with floating chat
 class AppRouter {
   static final GoRouter _router = GoRouter(
-    initialLocation: AppRoutes.onboarding, // Start with onboarding for new users
+    initialLocation: '/insights', // Start directly with insights
     debugLogDiagnostics: true,
     routes: [
-      // Onboarding Routes
+      // Main Insights Route (home screen)
       GoRoute(
-        path: AppRoutes.onboarding,
-        name: 'onboarding',
-        builder: (context, state) => const OnboardingScreen(),
+        path: '/insights',
+        name: 'insights',
+        builder: (context, state) => const InsightsScreen(),
       ),
       
-      // Main App Shell with Bottom Navigation
-      ShellRoute(
-        builder: (context, state, child) {
-          return MainNavigation(child: child);
-        },
+      // Transactions Route (modal/sheet)
+      GoRoute(
+        path: '/transactions',
+        name: 'transactions',
+        builder: (context, state) => const TransactionsScreen(),
         routes: [
-          // Home/Dashboard Route
+          // Add Transaction Sub-route
           GoRoute(
-            path: AppRoutes.home,
-            name: 'home',
-            builder: (context, state) => const DashboardScreen(),
+            path: '/add',
+            name: 'add-transaction',
+            builder: (context, state) => const AddTransactionScreen(),
           ),
-          
-          // Transactions Route
+          // Individual Transaction Details
           GoRoute(
-            path: AppRoutes.transactions,
-            name: 'transactions',
-            builder: (context, state) => const TransactionsScreen(),
-            routes: [
-              GoRoute(
-                path: '/add',
-                name: 'add-transaction',
-                builder: (context, state) => const AddTransactionScreen(),
-              ),
-            ],
-          ),
-          
-          // Insights Route
-          GoRoute(
-            path: AppRoutes.insights,
-            name: 'insights',
-            builder: (context, state) => const InsightsScreen(),
-          ),
-          
-          // MoneyCA Chat Route
-          GoRoute(
-            path: AppRoutes.chat,
-            name: 'chat',
-            builder: (context, state) => const ChatScreen(),
+            path: '/:transactionId',
+            name: 'transaction-details',
+            builder: (context, state) {
+              final transactionId = state.pathParameters['transactionId']!;
+              return TransactionDetailsScreen(transactionId: transactionId);
+            },
           ),
         ],
       ),
       
-      // Profile & Settings Routes (outside of shell)
+      // MoneyCA Chat Route (modal)
       GoRoute(
-        path: AppRoutes.profile,
-        name: 'profile',
-        builder: (context, state) => const ProfileScreen(),
+        path: '/chat',
+        name: 'chat',
+        builder: (context, state) => const ChatScreen(),
       ),
     ],
     
     // Error handling
     errorBuilder: (context, state) => Scaffold(
-      appBar: AppBar(title: const Text('Error')),
+      backgroundColor: const Color(0xFF0A0B0F),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF0A0B0F),
+        title: const Text('Oops!', style: TextStyle(color: Colors.white)),
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error, size: 64, color: Colors.red),
-            const SizedBox(height: 16),
+            const Icon(Icons.error_outline, size: 64, color: Colors.redAccent),
+            const SizedBox(height: 24),
+            const Text(
+              'Something went wrong',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
             Text(
               'Page not found: ${state.uri.toString()}',
-              style: Theme.of(context).textTheme.headlineSmall,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.7),
+                fontSize: 16,
+              ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () => context.go(AppRoutes.home),
-              child: const Text('Go Home'),
+              onPressed: () => context.go('/insights'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.purple,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Back to Insights'),
             ),
           ],
         ),
