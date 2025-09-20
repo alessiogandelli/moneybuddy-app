@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/routes/app_routes.dart';
 
 /// Onboarding screen where MoneyCA introduces users to the app
 /// and learns about their financial situation and goals
@@ -107,12 +109,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         });
                       } else {
                         // Complete onboarding - navigate to main app
-                        // TODO: Navigate to home screen
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('🚧 Navigation to main app coming soon!'),
-                          ),
-                        );
+                        context.go(AppRoutes.home);
                       }
                     },
                     child: Text(currentStep < steps.length - 1 ? 'Next' : 'Get Started'),

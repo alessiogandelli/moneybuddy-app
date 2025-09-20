@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 /// Main navigation widget with bottom navigation bar
 /// Provides consistent navigation across all main app screens
@@ -94,12 +95,7 @@ class _MainNavigationState extends State<MainNavigation> {
     if (_currentIndex == 1) {
       return FloatingActionButton(
         onPressed: () {
-          // TODO: Navigate to add transaction
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('🚧 Quick add transaction coming soon!'),
-            ),
-          );
+          context.push('/transactions/add');
         },
         backgroundColor: Colors.green,
         child: const Icon(Icons.add, color: Colors.white),

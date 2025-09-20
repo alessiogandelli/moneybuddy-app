@@ -61,18 +61,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
           _buildTransactionList('expenses'),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // TODO: Navigate to add transaction screen
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('🚧 Add transaction feature coming soon!'),
-            ),
-          );
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Add Transaction'),
-      ),
     );
   }
 

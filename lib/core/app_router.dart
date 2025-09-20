@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../features/onboarding/presentation/onboarding_screen.dart';
 import '../features/transactions/presentation/transactions_screen.dart';
+import '../features/transactions/screens/add_transaction_screen.dart';
 import '../features/insights/presentation/insights_screen.dart';
 import '../features/moneyca_chat/presentation/chat_screen.dart';
 import '../shared/widgets/main_navigation.dart';
@@ -111,9 +111,35 @@ class DashboardScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('MoneyBuddy Dashboard'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () => context.push(AppRoutes.profile),
+          // Debug menu for development
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              switch (value) {
+                case 'onboarding':
+                  context.go(AppRoutes.onboarding);
+                  break;
+                case 'profile':
+                  context.push(AppRoutes.profile);
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'onboarding',
+                child: ListTile(
+                  leading: Icon(Icons.psychology),
+                  title: Text('Reset Onboarding'),
+                  subtitle: Text('For development'),
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'profile',
+                child: ListTile(
+                  leading: Icon(Icons.person),
+                  title: Text('Profile'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -136,26 +162,6 @@ class DashboardScreen extends StatelessWidget {
             Text('🚧 Dashboard coming soon!'),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class AddTransactionScreen extends StatelessWidget {
-  const AddTransactionScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Add Transaction'),
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => context.pop(),
-        ),
-      ),
-      body: const Center(
-        child: Text('🚧 Add Transaction screen coming soon!'),
       ),
     );
   }
