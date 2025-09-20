@@ -83,39 +83,80 @@ class Transaction {
 
   /// Create transaction from JSON
   factory Transaction.fromJson(Map<String, dynamic> json) {
-    return Transaction(
-      id: json['id'] as int?,
-      trxId: json['trx_id'] as String,
-      accountIban: json['account_iban'] as String?,
-      accountName: json['account_name'] as String?,
-      accountCurrency: json['account_currency'] as String?,
-      customerName: json['customer_name'] as String?,
-      product: json['product'] as String?,
-      trxType: json['trx_type'] as String?,
-      bookingType: json['booking_type'] as String?,
-      valueDate: json['value_date'] != null 
-          ? DateTime.parse(json['value_date'] as String)
-          : null,
-      bookingDate: json['booking_date'] != null 
-          ? DateTime.parse(json['booking_date'] as String)
-          : null,
-      direction: json['direction'] as String,
-      amount: (json['amount'] as num).toDouble(),
-      currency: json['currency'] as String,
-      merchantName: json['merchant_name'] as String?,
-      merchantFullText: json['merchant_full_text'] as String?,
-      merchantPhone: json['merchant_phone'] as String?,
-      merchantAddress: json['merchant_address'] as String?,
-      merchantIban: json['merchant_iban'] as String?,
-      cardIdMasked: json['card_id_masked'] as String?,
-      acquirerCountry: json['acquirer_country'] as String?,
-      referenceNr: json['reference_nr'] as String?,
-      rawPayload: json['raw_payload'] != null 
-          ? Map<String, dynamic>.from(json['raw_payload'] as Map)
-          : null,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
-    );
+    try {
+      // Handle both camelCase and snake_case for trxId
+      final trxIdValue = json['trxId'] ?? json['trx_id'];
+      final trxId = trxIdValue?.toString() ?? 'TXN-${DateTime.now().millisecondsSinceEpoch}';
+      
+      // Required fields validation with detailed error messages
+      final direction = json['direction'] as String?;
+      if (direction == null || direction.isEmpty) {
+        throw FormatException('Missing required field: direction');
+      }
+      
+      final amountValue = json['amount'];
+      if (amountValue == null) {
+        throw FormatException('Missing required field: amount');
+      }
+      final amount = (amountValue as num).toDouble();
+      
+      final currency = json['currency'] as String?;
+      if (currency == null || currency.isEmpty) {
+        throw FormatException('Missing required field: currency');
+      }
+      
+      // Parse dates safely
+      DateTime? parseDate(dynamic dateValue, String fieldName) {
+        if (dateValue == null) return null;
+        try {
+          return DateTime.parse(dateValue.toString());
+        } catch (e) {
+          print('⚠️  Warning: Invalid date format for $fieldName: $dateValue');
+          return null;
+        }
+      }
+      
+      final now = DateTime.now();
+      final createdAtRaw = json['createdAt'] ?? json['created_at'];
+      final updatedAtRaw = json['updatedAt'] ?? json['updated_at'];
+      
+      return Transaction(
+        id: json['id'] as int?,
+        trxId: trxId,
+        accountIban: json['accountIban'] ?? json['account_iban'] as String?,
+        accountName: json['accountName'] ?? json['account_name'] as String?,
+        accountCurrency: json['accountCurrency'] ?? json['account_currency'] as String?,
+        customerName: json['customerName'] ?? json['customer_name'] as String?,
+        product: json['product'] as String?,
+        trxType: json['trxType'] ?? json['trx_type'] as String?,
+        bookingType: json['bookingType'] ?? json['booking_type'] as String?,
+        valueDate: parseDate(json['valueDate'] ?? json['value_date'], 'valueDate'),
+        bookingDate: parseDate(json['bookingDate'] ?? json['booking_date'], 'bookingDate'),
+        direction: direction,
+        amount: amount,
+        currency: currency,
+        merchantName: json['merchantName'] ?? json['merchant_name'] as String?,
+        merchantFullText: json['merchantFullText'] ?? json['merchant_full_text'] as String?,
+        merchantPhone: json['merchantPhone'] ?? json['merchant_phone'] as String?,
+        merchantAddress: json['merchantAddress'] ?? json['merchant_address'] as String?,
+        merchantIban: json['merchantIban'] ?? json['merchant_iban'] as String?,
+        cardIdMasked: json['cardIdMasked'] ?? json['card_id_masked'] as String?,
+        acquirerCountry: json['acquirerCountry'] ?? json['acquirer_country'] as String?,
+        referenceNr: json['referenceNr'] ?? json['reference_nr'] as String?,
+        rawPayload: (json['rawPayload'] ?? json['raw_payload']) != null 
+            ? Map<String, dynamic>.from((json['rawPayload'] ?? json['raw_payload']) as Map)
+            : null,
+        createdAt: parseDate(createdAtRaw, 'createdAt') ?? now,
+        updatedAt: parseDate(updatedAtRaw, 'updatedAt') ?? now,
+      );
+    } catch (e, stackTrace) {
+      print('🚨 Error parsing transaction: $e');
+      print('📋 Transaction data: ${json.toString()}');
+      print('🔍 Stack trace: $stackTrace');
+      
+      // Re-throw with more context
+      throw FormatException('Failed to parse transaction: $e\nData: ${json.toString()}');
+    }
   }
 
   /// Create a sample transaction for testing/demo purposes

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../models/transaction.dart';
 
@@ -8,7 +9,7 @@ class TransactionApiService {
 
   TransactionApiService({
     Dio? dio,
-    this.baseUrl = 'https://api.moneybuddy.com', // Replace with your backend URL
+    this.baseUrl = 'http://localhost:420', // Your local API endpoint
   }) : _dio = dio ?? _createDefaultDio();
 
   static Dio _createDefaultDio() {
@@ -52,25 +53,61 @@ class TransactionApiService {
       if (accountIban != null) queryParams['account_iban'] = accountIban;
 
       final response = await _dio.get(
-        '$baseUrl/api/v1/transactions',
+        '$baseUrl/transaction',
         queryParameters: queryParams,
+        options: Options(
+          responseType: ResponseType.plain, // Get as plain text first
+        ),
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data['transactions'] ?? response.data;
-        return data.map((json) => Transaction.fromJson(json)).toList();
+        // Clean the response data by replacing NaN with null
+        String responseData = response.data as String;
+        
+        // Replace invalid JSON values
+        responseData = responseData
+            .replaceAll(': NaN,', ': null,')
+            .replaceAll(': NaN}', ': null}')
+            .replaceAll(': NaN]', ': null]');
+        
+        print('🧹 Cleaned ${responseData.split('NaN').length - 1} NaN values from JSON');
+        
+        // Now parse the cleaned JSON
+        final dynamic jsonData = jsonDecode(responseData);
+        final List<dynamic> data = jsonData is List ? jsonData : jsonData['transactions'] ?? jsonData;
+        
+        final List<Transaction> transactions = [];
+        int validCount = 0;
+        int invalidCount = 0;
+        
+        for (int i = 0; i < data.length; i++) {
+          try {
+            final transaction = Transaction.fromJson(data[i]);
+            transactions.add(transaction);
+            validCount++;
+          } catch (e) {
+            invalidCount++;
+            print('⚠️  Skipping transaction at index $i: $e');
+          }
+        }
+        
+        print('✅ Successfully parsed $validCount transactions, skipped $invalidCount broken entries');
+        return transactions;
       } else {
         throw ApiException('Failed to fetch transactions', response.statusCode ?? 500);
       }
     } on DioException catch (e) {
       throw _handleDioException(e);
+    } catch (e) {
+      print('🚨 Unexpected error parsing transactions: $e');
+      throw ApiException('Failed to parse transaction data: $e', 500);
     }
   }
 
   /// Get a specific transaction by ID
   Future<Transaction> getTransaction(String trxId) async {
     try {
-      final response = await _dio.get('$baseUrl/api/v1/transactions/$trxId');
+      final response = await _dio.get('$baseUrl/transaction/$trxId');
       
       if (response.statusCode == 200) {
         return Transaction.fromJson(response.data);
@@ -92,7 +129,7 @@ class TransactionApiService {
       transactionData.remove('updated_at');
 
       final response = await _dio.post(
-        '$baseUrl/api/v1/transactions',
+        '$baseUrl/transaction',
         data: transactionData,
       );
 

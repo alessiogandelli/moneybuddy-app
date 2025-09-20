@@ -11,7 +11,6 @@ class TransactionRepository {
   final bool _useMockData;
   
   // Cache control
-  static const String _transactionsCacheKey = 'transactions_cache';
   static const String _lastSyncKey = 'last_sync_timestamp';
   static const Duration _cacheValidDuration = Duration(minutes: 15);
   
@@ -23,7 +22,7 @@ class TransactionRepository {
 
   TransactionRepository({
     required TransactionApiService apiService,
-    bool useMockData = kDebugMode, // Use mock data in debug mode by default
+    bool useMockData = false, // Always use real API by default
   }) : _apiService = apiService,
        _useMockData = useMockData;
 
@@ -365,12 +364,8 @@ class TransactionRepository {
 
   Future<List<Transaction>> _getCachedTransactions() async {
     try {
-      final cachedData = HiveService.getCachedData<List<dynamic>>(_transactionsCacheKey);
-      if (cachedData == null) return [];
-      
-      return cachedData
-          .map((json) => Transaction.fromJson(Map<String, dynamic>.from(json)))
-          .toList();
+      // Use the robust HiveService method that handles broken entries
+      return HiveService.getCachedTransactions();
     } catch (e) {
       debugPrint('Error getting cached transactions: $e');
       return [];
@@ -388,8 +383,8 @@ class TransactionRepository {
 
   Future<void> _cacheTransactions(List<Transaction> transactions) async {
     try {
-      final jsonList = transactions.map((t) => t.toJson()).toList();
-      await HiveService.cacheData(_transactionsCacheKey, jsonList, expiration: _cacheValidDuration);
+      // Use the dedicated HiveService method for transactions
+      await HiveService.saveTransactions(transactions);
     } catch (e) {
       debugPrint('Error caching transactions: $e');
     }

@@ -101,9 +101,28 @@ class HiveService {
     if (!isInitialized) return [];
     
     final transactionsData = transactionsBox.get('transactions', defaultValue: <dynamic>[]);
-    return (transactionsData as List)
-        .map((data) => Transaction.fromJson(Map<String, dynamic>.from(data)))
-        .toList();
+    final List<Transaction> validTransactions = [];
+    int skippedCount = 0;
+    
+    for (int i = 0; i < (transactionsData as List).length; i++) {
+      try {
+        final transactionJson = Map<String, dynamic>.from(transactionsData[i] as Map);
+        final transaction = Transaction.fromJson(transactionJson);
+        validTransactions.add(transaction);
+      } catch (e) {
+        skippedCount++;
+        print('⚠️  Skipping broken transaction at index $i: $e');
+        // Continue processing other transactions
+      }
+    }
+    
+    if (skippedCount > 0) {
+      print('📊 Loaded ${validTransactions.length} valid transactions, skipped $skippedCount broken entries');
+    } else {
+      print('✅ Loaded ${validTransactions.length} transactions successfully');
+    }
+    
+    return validTransactions;
   }
 
   /// Save app settings

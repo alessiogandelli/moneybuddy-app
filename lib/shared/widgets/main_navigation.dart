@@ -47,6 +47,10 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
+    // Sync current index with current route
+    final currentLocation = GoRouterState.of(context).uri.toString();
+    _currentIndex = _getIndexForRoute(currentLocation);
+    
     return Scaffold(
       body: widget.child,
       bottomNavigationBar: Container(
@@ -84,10 +88,18 @@ class _MainNavigationState extends State<MainNavigation> {
       _currentIndex = index;
     });
     
-    // TODO: Implement navigation with go_router
-    // This is a placeholder until we integrate with the router
+    // Navigate to the selected route
     final route = _navigationItems[index].route;
-    debugPrint('Navigating to: $route');
+    context.go(route);
+  }
+
+  int _getIndexForRoute(String route) {
+    for (int i = 0; i < _navigationItems.length; i++) {
+      if (route.startsWith(_navigationItems[i].route)) {
+        return i;
+      }
+    }
+    return 0; // Default to home
   }
 
   Widget? _buildFloatingActionButton() {
