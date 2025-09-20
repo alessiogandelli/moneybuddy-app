@@ -21,10 +21,14 @@ class TransactionApiService {
       'Accept': 'application/json',
     };
     
-    // Add interceptors for logging in debug mode
+    // Add minimal logging for debugging (no response body to avoid flooding console)
     dio.interceptors.add(LogInterceptor(
-      requestBody: true,
-      responseBody: true,
+      requestBody: false,
+      responseBody: false,
+      request: true,
+      requestHeader: false,
+      responseHeader: false,
+      error: true,
       logPrint: (obj) => print('🌐 API: $obj'),
     ));
     
