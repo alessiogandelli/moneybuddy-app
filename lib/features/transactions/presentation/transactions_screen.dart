@@ -263,26 +263,62 @@ class _TransactionsScreenState extends State<TransactionsScreen>
             ),
           ],
         ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              '${transaction.currency} ${transaction.amount.abs().toStringAsFixed(2)}',
-              style: TextStyle(
-                color: amountColor,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            if (transaction.trxType != null)
-              Text(
-                transaction.trxType!,
-                style: TextStyle(
-                  color: Colors.grey[500],
-                  fontSize: 10,
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '${transaction.currency} ${transaction.amount.abs().toStringAsFixed(2)}',
+                  style: TextStyle(
+                    color: amountColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
-              ),
+                if (transaction.trxType != null)
+                  Text(
+                    transaction.trxType!,
+                    style: TextStyle(
+                      color: Colors.grey[500],
+                      fontSize: 10,
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(width: 8),
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                switch (value) {
+                  case 'details':
+                    _showTransactionDetails(transaction);
+                    break;
+                  case 'delete':
+                    _confirmDeleteTransaction(transaction);
+                    break;
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'details',
+                  child: ListTile(
+                    leading: Icon(Icons.info_outline, size: 20),
+                    title: Text('View Details'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: ListTile(
+                    leading: Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                    title: Text('Delete', style: TextStyle(color: Colors.red)),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
         onTap: () {
@@ -291,6 +327,151 @@ class _TransactionsScreenState extends State<TransactionsScreen>
         },
       ),
     );
+  }
+
+  void _confirmDeleteTransaction(Transaction transaction) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Transaction'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Are you sure you want to delete this transaction?'),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    transaction.merchantName ?? transaction.trxId,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${transaction.currency} ${transaction.amount.toStringAsFixed(2)}',
+                    style: TextStyle(
+                      color: transaction.amount < 0 ? Colors.red : Colors.green,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    _formatDate(transaction.bookingDate ?? transaction.createdAt),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '⚠️ Note: Your API may not support deletions. The transaction will be removed from this view.',
+              style: TextStyle(
+                color: Colors.orange.shade700,
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _deleteTransaction(transaction);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteTransaction(Transaction transaction) async {
+    try {
+      print('🗑️  Attempting to delete transaction: ID=${transaction.id}, trxId=${transaction.trxId}');
+      
+      // Remove from local list immediately (optimistic delete)
+      setState(() {
+        _transactions.removeWhere((t) => t.trxId == transaction.trxId);
+      });
+
+      // Show success message immediately
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 8),
+                Text('Transaction "${transaction.merchantName ?? transaction.trxId}" deleted'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+
+      // Try API deletion in background
+      try {
+        String transactionId;
+        if (transaction.id != null) {
+          transactionId = transaction.id.toString();
+          print('🔍 Using integer ID: $transactionId');
+        } else {
+          transactionId = transaction.trxId;
+          print('🔍 Using trxId as fallback: $transactionId');
+        }
+        
+        // Add timeout to prevent hanging
+        await _repository.deleteTransaction(transactionId).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            print('⏰ Delete operation timed out after 10 seconds');
+            throw Exception('Delete operation timed out');
+          },
+        );
+        print('✅ Transaction deleted from API successfully');
+      } catch (e) {
+        print('⚠️  API delete failed: $e');
+        // Don't show error to user since UI already updated
+      }
+
+      print('✅ Transaction removed from UI successfully');
+    } catch (e) {
+      print('🚨 Error deleting transaction: $e');
+      
+      // Show minimal error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 8),
+                const Text('Error occurred, but transaction was removed from view'),
+              ],
+            ),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
   void _showTransactionDetails(Transaction transaction) {

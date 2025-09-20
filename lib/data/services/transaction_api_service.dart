@@ -172,15 +172,37 @@ class TransactionApiService {
   }
 
   /// Delete a transaction
-  Future<void> deleteTransaction(String trxId) async {
+  Future<void> deleteTransaction(String idOrTrxId) async {
     try {
-      final response = await _dio.delete('$baseUrl/api/v1/transactions/$trxId');
+      // Your API expects /transaction/<int:transaction_id>
+      print('🔍 Attempting to parse ID: $idOrTrxId');
+      final transactionId = int.tryParse(idOrTrxId);
       
-      if (response.statusCode != 200 && response.statusCode != 204) {
-        throw ApiException('Failed to delete transaction', response.statusCode ?? 500);
+      if (transactionId == null) {
+        print('❌ Failed to parse ID as integer: $idOrTrxId');
+        throw ApiException('Invalid transaction ID format: $idOrTrxId (API expects integer ID)', 400);
+      }
+      
+      print('🗑️  Deleting transaction with ID: $transactionId via DELETE $baseUrl/transaction/$transactionId');
+      final response = await _dio.delete('$baseUrl/transaction/$transactionId');
+      
+      print('🔍 Delete response: ${response.statusCode}');
+      
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        print('✅ Transaction $transactionId deleted successfully from API');
+      } else {
+        throw ApiException('Failed to delete transaction, status: ${response.statusCode}', response.statusCode ?? 500);
       }
     } on DioException catch (e) {
+      print('🚨 DioException during delete: ${e.type}, ${e.message}');
+      if (e.response != null) {
+        print('🔍 Response status: ${e.response!.statusCode}');
+        print('🔍 Response data: ${e.response!.data}');
+      }
       throw _handleDioException(e);
+    } catch (e) {
+      print('🚨 Unexpected error during delete: $e');
+      throw ApiException('Delete operation failed: $e', 500);
     }
   }
 
