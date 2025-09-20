@@ -45,5 +45,13 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	
+	<!-- MoneyBuddy Permissions -->
+	<key>NSCameraUsageDescription</key>
+	<string>MoneyBuddy needs access to your camera to scan receipts and capture transaction photos for better expense tracking.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>MoneyBuddy needs access to your microphone to record voice memos for transactions and interact with MoneyCA, your AI assistant.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>MoneyBuddy uses speech recognition to convert your voice transactions into text, making expense tracking faster and more convenient.</string>
 </dict>
 </plist>
