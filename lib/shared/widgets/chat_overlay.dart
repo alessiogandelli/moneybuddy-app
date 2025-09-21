@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import '../../core/theme/style.dart';
 import '../../data/services/simple_chat_service.dart';
 
 /// A floating chat overlay that appears on top of the current screen
@@ -116,12 +117,12 @@ class _ChatOverlayState extends State<ChatOverlay>
         height: 60,
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.purple, Colors.purpleAccent],
+            colors: [AppStyle.primaryGreen, AppStyle.greenAccent],
           ),
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
-              color: Colors.purple.withOpacity(0.3),
+              color: AppStyle.primaryGreen.withOpacity(0.3),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
@@ -160,7 +161,7 @@ class _ChatOverlayState extends State<ChatOverlay>
       width: 320,
       height: 480,
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1B23),
+        color: AppStyle.cardBackground,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.white.withOpacity(0.1)),
         boxShadow: [
@@ -187,7 +188,7 @@ class _ChatOverlayState extends State<ChatOverlay>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Colors.purple.withOpacity(0.8), Colors.blue.withOpacity(0.6)],
+          colors: [AppStyle.primaryGreen.withOpacity(0.8), AppStyle.greenAccent.withOpacity(0.6)],
         ),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
@@ -210,21 +211,20 @@ class _ChatOverlayState extends State<ChatOverlay>
             ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'MoneyCA',
-                  style: TextStyle(
+                  style: AppStyle.getHeadingSmall(true).copyWith(
                     color: Colors.white,
                     fontSize: 16,
-                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 Text(
                   'Financial Assistant',
-                  style: TextStyle(
+                  style: AppStyle.getCaption(true).copyWith(
                     color: Colors.white70,
                     fontSize: 12,
                   ),
@@ -284,9 +284,9 @@ class _ChatOverlayState extends State<ChatOverlay>
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 gradient: isUser 
-                  ? LinearGradient(colors: [Colors.purple, Colors.purpleAccent])
+                  ? LinearGradient(colors: [AppStyle.primaryGreen, AppStyle.greenAccent])
                   : null,
-                color: isUser ? null : const Color.fromARGB(255, 206, 123, 123).withOpacity(0.1),
+                color: isUser ? null : AppStyle.primaryStone10.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(18).copyWith(
                   bottomRight: isUser ? const Radius.circular(4) : null,
                   bottomLeft: !isUser ? const Radius.circular(4) : null,
@@ -295,9 +295,8 @@ class _ChatOverlayState extends State<ChatOverlay>
               ),
               child: Text(
                 message.text,
-                style: TextStyle(
+                style: AppStyle.getBodyMedium(true).copyWith(
                   color: Colors.white,
-                  fontSize: 14,
                   height: 1.4,
                 ),
               ),
@@ -305,9 +304,8 @@ class _ChatOverlayState extends State<ChatOverlay>
             const SizedBox(height: 4),
             Text(
               _formatTime(message.timestamp),
-              style: TextStyle(
+              style: AppStyle.getCaption(true).copyWith(
                 color: Colors.white.withOpacity(0.5),
-                fontSize: 11,
               ),
             ),
           ],
@@ -388,10 +386,12 @@ class _ChatOverlayState extends State<ChatOverlay>
               ),
               child: TextField(
                 controller: _messageController,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
+                style: AppStyle.getBodyMedium(true),
+                decoration: InputDecoration(
                   hintText: 'Ask me anything about your finances...',
-                  hintStyle: TextStyle(color: Colors.white54),
+                  hintStyle: AppStyle.getBodySmall(true).copyWith(
+                    color: Colors.white54,
+                  ),
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.zero,
                   filled: true,
@@ -411,7 +411,7 @@ class _ChatOverlayState extends State<ChatOverlay>
                 gradient: LinearGradient(
                   colors: _isSending 
                     ? [Colors.grey, Colors.grey] 
-                    : [Colors.purple, Colors.purpleAccent],
+                    : [AppStyle.primaryGreen, AppStyle.greenAccent],
                 ),
                 borderRadius: BorderRadius.circular(20),
               ),

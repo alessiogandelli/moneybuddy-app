@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/style.dart';
 import '../../../data/services/insights_service.dart';
 import '../../../data/repositories/transaction_repository.dart';
 import '../../../data/services/transaction_api_service.dart';
@@ -129,18 +130,18 @@ class _InsightsScreenState extends State<InsightsScreen> {
     return Stack(
       children: [
         Scaffold(
-          backgroundColor: const Color(0xFF0A0B0F),
+          backgroundColor: AppStyle.darkBackground,
           floatingActionButton: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.purple, Colors.purpleAccent],
+                colors: [AppStyle.primaryGreen, AppStyle.greenAccent],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(28),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.purple.withOpacity(0.5),
+                  color: AppStyle.primaryGreen.withOpacity(0.5),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -163,18 +164,18 @@ class _InsightsScreenState extends State<InsightsScreen> {
       ),
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: const Color(0xFF0A0B0F),
+        backgroundColor: AppStyle.darkBackground,
         title: Row(
           children: [
             Container(
               width: 8,
               height: 8,
               decoration: BoxDecoration(
-                color: Colors.greenAccent,
+                color: AppStyle.greenAccent,
                 borderRadius: BorderRadius.circular(4),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.greenAccent.withOpacity(0.5),
+                    color: AppStyle.greenAccent.withOpacity(0.5),
                     blurRadius: 8,
                     spreadRadius: 1,
                   ),
@@ -215,7 +216,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               gradient: LinearGradient(
-                colors: [Colors.purple.withOpacity(0.2), Colors.blue.withOpacity(0.2)],
+                colors: [AppStyle.primaryGreen.withOpacity(0.2), AppStyle.greenAccent.withOpacity(0.2)],
               ),
               border: Border.all(color: Colors.white.withOpacity(0.1)),
             ),
@@ -234,7 +235,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
                       color: period == selectedPeriod 
-                        ? Colors.purple.withOpacity(0.2) 
+                        ? AppStyle.primaryGreen.withOpacity(0.3) 
                         : Colors.transparent,
                     ),
                     child: Text(
@@ -244,7 +245,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                   ),
                 ),
               ).toList(),
-              color: const Color(0xFF1A1B23),
+              color: AppStyle.cardBackground,
               elevation: 20,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               child: Padding(
@@ -281,12 +282,12 @@ class _InsightsScreenState extends State<InsightsScreen> {
                   width: 60,
                   height: 60,
                   decoration: BoxDecoration(
-                    color: Colors.purple.withOpacity(0.1),
+                    color: AppStyle.primaryGreen.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(30),
                   ),
-                  child: const CircularProgressIndicator(
+                  child: CircularProgressIndicator(
                     strokeWidth: 3,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.purple),
+                    valueColor: AlwaysStoppedAnimation<Color>(AppStyle.primaryGreen),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -330,14 +331,14 @@ class _InsightsScreenState extends State<InsightsScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Colors.purple.withOpacity(0.8),
-                  Colors.blue.withOpacity(0.6),
-                  Colors.cyan.withOpacity(0.4),
+                  AppStyle.primaryGreen.withOpacity(0.8),
+                  AppStyle.greenAccent.withOpacity(0.6),
+                  AppStyle.stateSuccess70.withOpacity(0.4),
                 ],
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.purple.withOpacity(0.3),
+                  color: AppStyle.primaryGreen.withOpacity(0.3),
                   blurRadius: 30,
                   offset: const Offset(0, 10),
                 ),
@@ -479,7 +480,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
             margin: const EdgeInsets.all(20),
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: const Color(0xFF1A1B23),
+              color: AppStyle.cardBackground,
               borderRadius: BorderRadius.circular(24),
               border: Border.all(color: Colors.white.withOpacity(0.1)),
             ),
@@ -523,7 +524,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
             margin: const EdgeInsets.all(20),
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: const Color(0xFF1A1B23),
+              color: AppStyle.cardBackground,
               borderRadius: BorderRadius.circular(24),
               border: Border.all(color: Colors.white.withOpacity(0.1)),
             ),
@@ -681,12 +682,12 @@ class _InsightsScreenState extends State<InsightsScreen> {
 
   Widget _buildSmartInsightCard(InsightItem insight, int index) {
     final colors = [
-      [Colors.purple, Colors.purpleAccent],
-      [Colors.blue, Colors.blueAccent], 
-      [Colors.green, Colors.greenAccent],
-      [Colors.orange, Colors.orangeAccent],
-      [Colors.pink, Colors.pinkAccent],
-      [Colors.cyan, Colors.cyanAccent],
+      [AppStyle.primaryGreen, AppStyle.greenAccent],
+      [AppStyle.stateSuccess100, AppStyle.stateSuccess70], 
+      [AppStyle.secondaryGlacier100, AppStyle.secondaryGlacier70],
+      [AppStyle.primaryLight100, AppStyle.primaryLight70],
+      [AppStyle.stateWarning100, AppStyle.stateWarning70],
+      [AppStyle.primaryAir100, AppStyle.primaryAir70],
     ];
     
     final cardColors = colors[index % colors.length];
@@ -946,8 +947,8 @@ class _InsightsScreenState extends State<InsightsScreen> {
 
   Color _getTransactionColor(Transaction transaction) {
     final direction = transaction.direction;
-    if (direction == 'IN') return Colors.greenAccent;
-    if (direction == 'OUT') return Colors.redAccent;
+    if (direction == 'IN') return AppStyle.greenAccent;
+    if (direction == 'OUT') return AppStyle.stateError100;
     return Colors.grey;
   }
 

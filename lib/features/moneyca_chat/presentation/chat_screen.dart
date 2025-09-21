@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/style.dart';
 
 /// Chat screen for MoneyCA - the AI financial assistant
 /// Users can ask questions about their finances, get insights,
@@ -107,24 +108,25 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppStyle.darkBackground,
       appBar: AppBar(
+        backgroundColor: AppStyle.darkBackground,
         title: Row(
           children: [
             CircleAvatar(
-              backgroundColor: Colors.purple.shade100,
+              backgroundColor: AppStyle.primaryGreen.withOpacity(0.2),
               child: const Text('🤖', style: TextStyle(fontSize: 16)),
             ),
             const SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('MoneyCA', style: TextStyle(fontSize: 16)),
+                Text('MoneyCA', style: AppStyle.getBodyLarge(true).copyWith(fontSize: 16)),
                 Text(
                   'Your AI Assistant',
-                  style: TextStyle(
+                  style: AppStyle.getCaption(true).copyWith(
                     fontSize: 12,
-                    color: Colors.grey[300],
-                    fontWeight: FontWeight.normal,
+                    color: AppStyle.textSecondary,
                   ),
                 ),
               ],
@@ -180,7 +182,7 @@ class _ChatScreenState extends State<ChatScreen> {
           if (!isUser) ...[
             CircleAvatar(
               radius: 16,
-              backgroundColor: Colors.purple.shade100,
+              backgroundColor: AppStyle.primaryGreen.withOpacity(0.2),
               child: const Text('🤖', style: TextStyle(fontSize: 12)),
             ),
             const SizedBox(width: 8),
@@ -190,27 +192,30 @@ class _ChatScreenState extends State<ChatScreen> {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isUser ? Colors.green : Colors.grey[100],
+                gradient: isUser ? LinearGradient(
+                  colors: [AppStyle.primaryGreen, AppStyle.greenAccent],
+                ) : null,
+                color: isUser ? null : AppStyle.cardBackground,
                 borderRadius: BorderRadius.circular(16).copyWith(
                   bottomLeft: isUser ? const Radius.circular(16) : Radius.zero,
                   bottomRight: isUser ? Radius.zero : const Radius.circular(16),
                 ),
+                border: !isUser ? Border.all(color: Colors.white.withOpacity(0.1)) : null,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     message.text,
-                    style: TextStyle(
-                      color: isUser ? Colors.white : Colors.black87,
+                    style: AppStyle.getBodyMedium(true).copyWith(
+                      color: isUser ? Colors.white : AppStyle.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     _formatTime(message.timestamp),
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: isUser ? Colors.white70 : Colors.grey[600],
+                    style: AppStyle.getCaption(true).copyWith(
+                      color: isUser ? Colors.white70 : AppStyle.textSecondary,
                     ),
                   ),
                 ],
@@ -222,8 +227,8 @@ class _ChatScreenState extends State<ChatScreen> {
             const SizedBox(width: 8),
             CircleAvatar(
               radius: 16,
-              backgroundColor: Colors.green.shade100,
-              child: const Icon(Icons.person, size: 16, color: Colors.green),
+              backgroundColor: AppStyle.greenAccent.withOpacity(0.2),
+              child: Icon(Icons.person, size: 16, color: AppStyle.greenAccent),
             ),
           ],
         ],
@@ -238,17 +243,18 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           CircleAvatar(
             radius: 16,
-            backgroundColor: Colors.purple.shade100,
+            backgroundColor: AppStyle.primaryGreen.withOpacity(0.2),
             child: const Text('🤖', style: TextStyle(fontSize: 12)),
           ),
           const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.grey[100],
+              color: AppStyle.cardBackground,
               borderRadius: BorderRadius.circular(16).copyWith(
                 bottomLeft: Radius.zero,
               ),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -258,11 +264,11 @@ class _ChatScreenState extends State<ChatScreen> {
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.grey[400]!),
+                    valueColor: AlwaysStoppedAnimation<Color>(AppStyle.primaryGreen),
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Text('MoneyCA is thinking...'),
+                Text('MoneyCA is thinking...', style: AppStyle.getBodyMedium(true)),
               ],
             ),
           ),
@@ -275,9 +281,9 @@ class _ChatScreenState extends State<ChatScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
+        color: AppStyle.cardBackground,
         border: Border(
-          top: BorderSide(color: Colors.grey[300]!),
+          top: BorderSide(color: Colors.white.withOpacity(0.1)),
         ),
       ),
       child: SafeArea(
@@ -292,9 +298,9 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 );
               },
-              icon: const Icon(Icons.mic, color: Colors.green),
+              icon: Icon(Icons.mic, color: AppStyle.primaryGreen),
               style: IconButton.styleFrom(
-                backgroundColor: Colors.green.withOpacity(0.1),
+                backgroundColor: AppStyle.primaryGreen.withOpacity(0.1),
               ),
             ),
             
@@ -304,14 +310,18 @@ class _ChatScreenState extends State<ChatScreen> {
             Expanded(
               child: TextField(
                 controller: _messageController,
+                style: AppStyle.getBodyMedium(true),
                 decoration: InputDecoration(
                   hintText: 'Ask MoneyCA anything...',
+                  hintStyle: AppStyle.getBodySmall(true).copyWith(
+                    color: AppStyle.textSecondary,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
-                  fillColor: Colors.grey[100],
+                  fillColor: AppStyle.cardBackground,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 10,
@@ -330,7 +340,7 @@ class _ChatScreenState extends State<ChatScreen> {
               onPressed: _isLoading ? null : _sendMessage,
               icon: const Icon(Icons.send, color: Colors.white),
               style: IconButton.styleFrom(
-                backgroundColor: Colors.green,
+                backgroundColor: AppStyle.primaryGreen,
                 disabledBackgroundColor: Colors.grey,
               ),
             ),
