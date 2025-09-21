@@ -91,7 +91,7 @@ class _ChatOverlayState extends State<ChatOverlay>
           // Chat bubble
           Positioned(
             right: 20,
-            bottom: 90,
+            bottom: 20,
             child: ScaleTransition(
               scale: _scaleAnimation,
               child: SlideTransition(
@@ -158,8 +158,8 @@ class _ChatOverlayState extends State<ChatOverlay>
 
   Widget _buildExpandedChat() {
     return Container(
-      width: 320,
-      height: 480,
+      width: 350,
+      height: 700,
       decoration: BoxDecoration(
         color: AppStyle.cardBackground,
         borderRadius: BorderRadius.circular(24),
@@ -188,7 +188,9 @@ class _ChatOverlayState extends State<ChatOverlay>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppStyle.primaryGreen.withOpacity(0.8), AppStyle.greenAccent.withOpacity(0.6)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [AppStyle.primaryGreen.withOpacity(0.8), const Color.fromARGB(255, 22, 27, 31)]
         ),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
@@ -198,16 +200,13 @@ class _ChatOverlayState extends State<ChatOverlay>
       child: Row(
         children: [
           Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Icon(
-              Icons.smart_toy_rounded,
-              color: Colors.white,
-              size: 24,
+            width: 100,
+            height: 100,
+           
+            child: Image.asset('assets/images/monyca.png',
+            width: 100,
+            height: 100,
+            fit: BoxFit.cover,
             ),
           ),
           const SizedBox(width: 12),
@@ -216,14 +215,14 @@ class _ChatOverlayState extends State<ChatOverlay>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'MoneyCA',
+                  'Monyca',
                   style: AppStyle.getHeadingSmall(true).copyWith(
                     color: Colors.white,
-                    fontSize: 16,
+                    fontSize: 30,
                   ),
                 ),
                 Text(
-                  'Financial Assistant',
+                  'AI personal finance assistant',
                   style: AppStyle.getCaption(true).copyWith(
                     color: Colors.white70,
                     fontSize: 12,
@@ -323,11 +322,7 @@ class _ChatOverlayState extends State<ChatOverlay>
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color.fromARGB(255, 175, 93, 93).withOpacity(0.1)),
-            ),
+         
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -369,20 +364,15 @@ class _ChatOverlayState extends State<ChatOverlay>
   Widget _buildMessageInput() {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(color: Colors.white.withOpacity(0.1)),
-        ),
-      ),
+  
       child: Row(
         children: [
           Expanded(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withOpacity(0.9),
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.white.withOpacity(0.1)),
               ),
               child: TextField(
                 controller: _messageController,
@@ -393,9 +383,12 @@ class _ChatOverlayState extends State<ChatOverlay>
                     color: Colors.white54,
                   ),
                   border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  errorBorder: InputBorder.none,
+                  focusedErrorBorder: InputBorder.none,
                   contentPadding: EdgeInsets.zero,
-                  filled: true,
-                  fillColor: Colors.transparent,
+                  filled: false,
                 ),
                 onSubmitted: (text) => _sendMessage(text),
                 maxLines: null,

@@ -236,6 +236,7 @@ class MockTransactionService {
       rawPayload: _generateRawPayload(merchantNameFinal, transactionAmount),
       createdAt: now,
       updatedAt: now,
+      category: sourceData['category'] as String,
     );
   }
 
@@ -363,6 +364,7 @@ class MockTransactionService {
       },
       createdAt: now,
       updatedAt: now,
+      category: 'other'
     );
   }
 

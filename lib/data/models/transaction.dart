@@ -53,6 +53,8 @@ class Transaction {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  final String category;
+
   const Transaction({
     this.id,
     required this.trxId,
@@ -79,6 +81,7 @@ class Transaction {
     this.rawPayload,
     required this.createdAt,
     required this.updatedAt,
+    required this.category, // added required category
   });
 
   /// Create transaction from JSON
@@ -116,12 +119,30 @@ class Transaction {
         }
       }
       
+      // Safe integer parsing
+      int? safeParseInt(dynamic value) {
+        if (value == null) return null;
+        if (value is int) return value;
+        if (value is String) {
+          try {
+            return int.parse(value);
+          } catch (e) {
+            return null;
+          }
+        }
+        if (value is double) return value.toInt();
+        return null;
+      }
+      
       final now = DateTime.now();
       final createdAtRaw = json['createdAt'] ?? json['created_at'];
       final updatedAtRaw = json['updatedAt'] ?? json['updated_at'];
+
+      // category parsing with sensible fallback
+      final category = (json['category'] ?? json['category_name'] ?? 'uncategorized').toString();
       
       return Transaction(
-        id: json['id'] as int?,
+        id: safeParseInt(json['id']),
         trxId: trxId,
         accountIban: json['accountIban'] ?? json['account_iban'] as String?,
         accountName: json['accountName'] ?? json['account_name'] as String?,
@@ -148,6 +169,7 @@ class Transaction {
             : null,
         createdAt: parseDate(createdAtRaw, 'createdAt') ?? now,
         updatedAt: parseDate(updatedAtRaw, 'updatedAt') ?? now,
+        category: category, // pass parsed category
       );
     } catch (e, stackTrace) {
       print('🚨 Error parsing transaction: $e');
@@ -166,6 +188,7 @@ class Transaction {
     double? amount,
     String? direction,
     String? currency,
+    String? category, // added optional category param
   }) {
     final now = DateTime.now();
     return Transaction(
@@ -179,6 +202,7 @@ class Transaction {
       valueDate: now,
       createdAt: now,
       updatedAt: now,
+      category: category ?? 'uncategorized', // set category
     );
   }
   
@@ -210,6 +234,7 @@ class Transaction {
       'raw_payload': rawPayload,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+      'category': category, // include category in JSON
     };
   }
 
@@ -240,6 +265,7 @@ class Transaction {
     Map<String, dynamic>? rawPayload,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? category, // add category to copyWith
   }) {
     return Transaction(
       id: id ?? this.id,
@@ -267,6 +293,7 @@ class Transaction {
       rawPayload: rawPayload ?? this.rawPayload,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      category: category ?? this.category, // preserve or override category
     );
   }
 

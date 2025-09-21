@@ -210,6 +210,7 @@ class TransactionFormData extends Equatable {
       rawPayload: metadata,
       createdAt: now,
       updatedAt: now,
+      category: category ?? 'other'
     );
   }
 

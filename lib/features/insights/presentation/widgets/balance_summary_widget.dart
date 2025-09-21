@@ -75,7 +75,7 @@ class BalanceSummaryWidget extends StatelessWidget {
                 text: '${isPositive ? '' : '-'}${_formatCurrency(balance.abs())}',
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 35,
+                  fontSize: 30,
                   fontWeight: FontWeight.bold,
                   letterSpacing: -1,
                 ),
@@ -137,7 +137,7 @@ class BalanceSummaryWidget extends StatelessWidget {
                         text: _formatCurrency(income),
                         style: const TextStyle(
                           color: Colors.lightGreenAccent,
-                          fontSize: 25,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                           letterSpacing: -1,
                         ),
@@ -191,7 +191,7 @@ class BalanceSummaryWidget extends StatelessWidget {
                         text: _formatCurrency(expenses),
                         style: const TextStyle(
                           color: Colors.redAccent,
-                          fontSize: 25,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                           letterSpacing: -1,
                         ),

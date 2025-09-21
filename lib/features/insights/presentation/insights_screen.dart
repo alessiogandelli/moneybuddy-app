@@ -85,11 +85,15 @@ class _InsightsScreenState extends State<InsightsScreen> {
         endDate: dateRange.end,
       );
       
-      final categories = InsightsService.calculateCategoryBreakdown(
-        transactions, 
-        startDate: dateRange.start, 
-        endDate: dateRange.end,
-      );
+      // Mocked category breakdown
+      final categories = <CategoryData>[
+        CategoryData( 'Groceries',  185.40,  Colors.greenAccent),
+        CategoryData( 'Dining Out',  142.75,  Colors.orangeAccent),
+        CategoryData( 'Transport',  68.20,  Colors.blueAccent),
+        CategoryData( 'Entertainment', 96.30,  Colors.purpleAccent),
+        CategoryData('Shopping',  210.00,  Colors.pinkAccent),
+        CategoryData( 'Utilities',  120.00,  Colors.tealAccent),
+      ];
       
       final insights = InsightsService.generateInsights(
         transactions, 
@@ -177,7 +181,6 @@ class _InsightsScreenState extends State<InsightsScreen> {
       backgroundColor: AppStyle.darkBackground,
       title: _buildAppBarTitle(),
       actions: [
-        //_buildRefreshButton(),
         _buildPeriodSelector(),
       ],
     );

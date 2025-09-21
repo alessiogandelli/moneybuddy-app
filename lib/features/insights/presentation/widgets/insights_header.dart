@@ -117,7 +117,7 @@ class InsightsHeaderWidget extends StatelessWidget {
           getMainStoryTitle(),
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 28,
+            fontSize: 23,
             fontWeight: FontWeight.bold,
             height: 1.2,
           ),

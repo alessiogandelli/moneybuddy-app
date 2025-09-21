@@ -201,6 +201,7 @@ extension TransactionDemo on Transaction {
       rawPayload: rawPayload ?? this.rawPayload,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      category: category ?? 'other',
     );
   }
 }
