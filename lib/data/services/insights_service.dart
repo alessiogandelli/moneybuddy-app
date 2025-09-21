@@ -88,6 +88,205 @@ class InsightsService {
     }).toList();
   }
   
+  /// Detect recurring subscription payments
+  static List<SubscriptionData> detectRecurringSubscriptions(List<Transaction> transactions) {
+    final Map<String, List<Transaction>> merchantGroups = {};
+    
+    // Group transactions by merchant name
+    for (final transaction in transactions) {
+      final merchantName = _normalizeMerchantName(transaction.merchantName ?? 'Unknown');
+      
+      // Only include expense transactions
+      final direction = transaction.direction.toLowerCase();
+      bool isExpense = false;
+      
+      if (direction == 'debit' || direction == 'out') {
+        isExpense = true;
+      } else if (direction != 'credit' && direction != 'in' && transaction.amount < 0) {
+        isExpense = true;
+      }
+      
+      if (isExpense && merchantName.isNotEmpty) {
+        merchantGroups.putIfAbsent(merchantName, () => []).add(transaction);
+      }
+    }
+    
+    final List<SubscriptionData> subscriptions = [];
+    
+    // Analyze each merchant group for recurring patterns
+    for (final entry in merchantGroups.entries) {
+      final merchantName = entry.key;
+      final merchantTransactions = entry.value..sort((a, b) => 
+        (a.bookingDate ?? a.createdAt).compareTo(b.bookingDate ?? b.createdAt));
+      
+      // Need at least 2 transactions to detect pattern
+      if (merchantTransactions.length < 2) continue;
+      
+      // Check if amounts are similar (allow 5% variance for subscriptions with tax changes)
+      final amounts = merchantTransactions.map((t) => t.amount.abs()).toList();
+      final avgAmount = amounts.reduce((a, b) => a + b) / amounts.length;
+      final isAmountConsistent = amounts.every((amount) => 
+        (amount - avgAmount).abs() / avgAmount < 0.05);
+      
+      // Check date intervals to detect frequency
+      final dates = merchantTransactions.map((t) => t.bookingDate ?? t.createdAt).toList();
+      final intervals = <int>[];
+      
+      for (int i = 1; i < dates.length; i++) {
+        intervals.add(dates[i].difference(dates[i - 1]).inDays);
+      }
+      
+      if (intervals.isEmpty) continue;
+      
+      final avgInterval = intervals.reduce((a, b) => a + b) / intervals.length;
+      final isIntervalConsistent = intervals.every((interval) => 
+        (interval - avgInterval).abs() <= 3); // Allow 3-day variance
+      
+      // Determine if this looks like a subscription
+      if (isAmountConsistent && isIntervalConsistent && avgInterval >= 25 && avgInterval <= 35) {
+        // Monthly subscription
+        final nextBillingDate = dates.last.add(Duration(days: avgInterval.round()));
+        
+        subscriptions.add(SubscriptionData(
+          name: _beautifySubscriptionName(merchantName),
+          amount: avgAmount,
+          frequency: SubscriptionFrequency.monthly,
+          nextBillingDate: nextBillingDate,
+          merchantName: merchantName,
+          icon: _getSubscriptionIcon(merchantName),
+          color: _getSubscriptionColor(merchantName),
+          lastTransactions: merchantTransactions.take(3).toList(),
+        ));
+      } else if (isAmountConsistent && isIntervalConsistent && avgInterval >= 6 && avgInterval <= 8) {
+        // Weekly subscription
+        final nextBillingDate = dates.last.add(Duration(days: avgInterval.round()));
+        
+        subscriptions.add(SubscriptionData(
+          name: _beautifySubscriptionName(merchantName),
+          amount: avgAmount,
+          frequency: SubscriptionFrequency.weekly,
+          nextBillingDate: nextBillingDate,
+          merchantName: merchantName,
+          icon: _getSubscriptionIcon(merchantName),
+          color: _getSubscriptionColor(merchantName),
+          lastTransactions: merchantTransactions.take(3).toList(),
+        ));
+      } else if (isAmountConsistent && isIntervalConsistent && avgInterval >= 85 && avgInterval <= 95) {
+        // Quarterly subscription
+        final nextBillingDate = dates.last.add(Duration(days: avgInterval.round()));
+        
+        subscriptions.add(SubscriptionData(
+          name: _beautifySubscriptionName(merchantName),
+          amount: avgAmount,
+          frequency: SubscriptionFrequency.quarterly,
+          nextBillingDate: nextBillingDate,
+          merchantName: merchantName,
+          icon: _getSubscriptionIcon(merchantName),
+          color: _getSubscriptionColor(merchantName),
+          lastTransactions: merchantTransactions.take(3).toList(),
+        ));
+      } else if (isAmountConsistent && isIntervalConsistent && avgInterval >= 360 && avgInterval <= 370) {
+        // Yearly subscription
+        final nextBillingDate = dates.last.add(Duration(days: avgInterval.round()));
+        
+        subscriptions.add(SubscriptionData(
+          name: _beautifySubscriptionName(merchantName),
+          amount: avgAmount,
+          frequency: SubscriptionFrequency.yearly,
+          nextBillingDate: nextBillingDate,
+          merchantName: merchantName,
+          icon: _getSubscriptionIcon(merchantName),
+          color: _getSubscriptionColor(merchantName),
+          lastTransactions: merchantTransactions.take(3).toList(),
+        ));
+      }
+    }
+    
+    // Sort by amount descending
+    subscriptions.sort((a, b) => b.amount.compareTo(a.amount));
+    
+    return subscriptions;
+  }
+  
+  /// Normalize merchant name for better grouping
+  static String _normalizeMerchantName(String name) {
+    return name
+      .toLowerCase()
+      .trim()
+      .replaceAll(RegExp(r'[^a-z0-9\s]'), '')
+      .replaceAll(RegExp(r'\s+'), ' ');
+  }
+  
+  /// Beautify subscription name for display
+  static String _beautifySubscriptionName(String merchantName) {
+    final Map<String, String> knownServices = {
+      'netflix': 'Netflix',
+      'spotify': 'Spotify',
+      'amazon': 'Amazon Prime',
+      'apple': 'Apple Services',
+      'google': 'Google Services',
+      'microsoft': 'Microsoft 365',
+      'adobe': 'Adobe Creative',
+      'dropbox': 'Dropbox',
+      'gym': 'Gym Membership',
+      'fitness': 'Fitness Club',
+      'internet': 'Internet Service',
+      'phone': 'Mobile Plan',
+      'electric': 'Electricity',
+      'water': 'Water Service',
+      'insurance': 'Insurance',
+    };
+    
+    for (final entry in knownServices.entries) {
+      if (merchantName.contains(entry.key)) {
+        return entry.value;
+      }
+    }
+    
+    // Capitalize first letter of each word
+    return merchantName
+      .split(' ')
+      .map((word) => word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1)}' : '')
+      .join(' ');
+  }
+  
+  /// Get icon for subscription based on merchant name
+  static String _getSubscriptionIcon(String merchantName) {
+    if (merchantName.contains('netflix')) return '📺';
+    if (merchantName.contains('spotify')) return '🎵';
+    if (merchantName.contains('amazon')) return '📦';
+    if (merchantName.contains('apple')) return '🍎';
+    if (merchantName.contains('google')) return '🔍';
+    if (merchantName.contains('microsoft')) return '💻';
+    if (merchantName.contains('adobe')) return '🎨';
+    if (merchantName.contains('dropbox')) return '☁️';
+    if (merchantName.contains('gym') || merchantName.contains('fitness')) return '💪';
+    if (merchantName.contains('internet')) return '🌐';
+    if (merchantName.contains('phone')) return '📱';
+    if (merchantName.contains('electric')) return '⚡';
+    if (merchantName.contains('water')) return '💧';
+    if (merchantName.contains('insurance')) return '🛡️';
+    if (merchantName.contains('food') || merchantName.contains('restaurant')) return '🍽️';
+    return '💳';
+  }
+  
+  /// Get color for subscription based on merchant name
+  static Color _getSubscriptionColor(String merchantName) {
+    if (merchantName.contains('netflix')) return const Color(0xFFE50914);
+    if (merchantName.contains('spotify')) return const Color(0xFF1DB954);
+    if (merchantName.contains('amazon')) return const Color(0xFFFF9900);
+    if (merchantName.contains('apple')) return const Color(0xFF007AFF);
+    if (merchantName.contains('google')) return const Color(0xFF4285F4);
+    if (merchantName.contains('microsoft')) return const Color(0xFF0078D4);
+    if (merchantName.contains('adobe')) return const Color(0xFFFF0000);
+    if (merchantName.contains('dropbox')) return const Color(0xFF0061FF);
+    if (merchantName.contains('gym') || merchantName.contains('fitness')) return const Color(0xFF4CAF50);
+    if (merchantName.contains('electric')) return const Color(0xFFFFC107);
+    if (merchantName.contains('water')) return const Color(0xFF2196F3);
+    if (merchantName.contains('insurance')) return const Color(0xFF9C27B0);
+    return const Color(0xFF6C757D);
+  }
+
   /// Generate AI-powered insights
   static List<InsightItem> generateInsights(List<Transaction> transactions, {
     DateTime? startDate,
@@ -400,4 +599,151 @@ class DateRange {
   final DateTime end;
   
   const DateRange(this.start, this.end);
+}
+
+/// Subscription frequency enumeration
+enum SubscriptionFrequency {
+  weekly,
+  monthly,
+  quarterly,
+  yearly;
+  
+  String get displayName {
+    switch (this) {
+      case SubscriptionFrequency.weekly:
+        return 'Weekly';
+      case SubscriptionFrequency.monthly:
+        return 'Monthly';
+      case SubscriptionFrequency.quarterly:
+        return 'Every 3 months';
+      case SubscriptionFrequency.yearly:
+        return 'Yearly';
+    }
+  }
+  
+  double getMonthlyAmount(double amount) {
+    switch (this) {
+      case SubscriptionFrequency.weekly:
+        return amount * 4.33; // Average weeks per month
+      case SubscriptionFrequency.monthly:
+        return amount;
+      case SubscriptionFrequency.quarterly:
+        return amount / 3;
+      case SubscriptionFrequency.yearly:
+        return amount / 12;
+    }
+  }
+}
+
+/// Subscription data model
+class SubscriptionData {
+  final String name;
+  final double amount;
+  final SubscriptionFrequency frequency;
+  final DateTime nextBillingDate;
+  final String merchantName;
+  final String icon;
+  final Color color;
+  final List<Transaction> lastTransactions;
+  
+  const SubscriptionData({
+    required this.name,
+    required this.amount,
+    required this.frequency,
+    required this.nextBillingDate,
+    required this.merchantName,
+    required this.icon,
+    required this.color,
+    required this.lastTransactions,
+  });
+  
+  /// Get the monthly equivalent amount for comparison
+  double get monthlyAmount => frequency.getMonthlyAmount(amount);
+  
+  /// Get next billing date formatted
+  String get nextBillingFormatted {
+    final now = DateTime.now();
+    final difference = nextBillingDate.difference(now).inDays;
+    
+    if (difference < 0) return 'Overdue';
+    if (difference == 0) return 'Today';
+    if (difference == 1) return 'Tomorrow';
+    if (difference <= 7) return 'In $difference days';
+    if (difference <= 30) return 'In ${(difference / 7).floor()} weeks';
+    return 'In ${(difference / 30).floor()} months';
+  }
+  
+  /// Check if subscription is due soon (within 7 days)
+  bool get isDueSoon {
+    final now = DateTime.now();
+    final difference = nextBillingDate.difference(now).inDays;
+    return difference <= 7 && difference >= 0;
+  }
+
+  static List<SubscriptionData> fromTransactions(List<Transaction> transactions) {
+
+    return InsightsService.detectRecurringSubscriptions(transactions);
+  }
+
+  static List<SubscriptionData> exampleSubscriptions = [
+    SubscriptionData(
+      name: 'Netflix',
+      amount: 15.99,
+      frequency: SubscriptionFrequency.monthly,
+      nextBillingDate: DateTime.now().add(const Duration(days: 5)),
+      merchantName: 'Netflix',
+      icon: '📺',
+      color: const Color(0xFFE50914),
+      lastTransactions: [],
+    ),
+    SubscriptionData(
+      name: 'Spotify',
+      amount: 9.99,
+      frequency: SubscriptionFrequency.monthly,
+      nextBillingDate: DateTime.now().add(const Duration(days: 12)),
+      merchantName: 'Spotify',
+      icon: '🎵',
+      color: const Color(0xFF1DB954),
+      lastTransactions: [],
+    ),
+    SubscriptionData(
+      name: 'Amazon Prime',
+      amount: 119.00,
+      frequency: SubscriptionFrequency.yearly,
+      nextBillingDate: DateTime.now().add(const Duration(days: 200)),
+      merchantName: 'Amazon',
+      icon: '📦',
+      color: const Color(0xFFFF9900),
+      lastTransactions: [],
+    ),
+  ];
+}
+
+/// Subscription summary data
+class SubscriptionSummary {
+  final List<SubscriptionData> subscriptions;
+  final double totalMonthlyAmount;
+  final double totalYearlyAmount;
+  final int activeCount;
+  
+  const SubscriptionSummary({
+    required this.subscriptions,
+    required this.totalMonthlyAmount,
+    required this.totalYearlyAmount,
+    required this.activeCount,
+  });
+  
+  factory SubscriptionSummary.fromSubscriptions(List<SubscriptionData> subscriptions) {
+    final totalMonthly = subscriptions.fold<double>(
+      0.0,
+      (sum, sub) => sum + sub.monthlyAmount,
+    );
+    
+    return SubscriptionSummary(
+      subscriptions: subscriptions,
+      totalMonthlyAmount: totalMonthly,
+      totalYearlyAmount: totalMonthly * 12,
+      activeCount: subscriptions.length,
+    );
+  }
 }

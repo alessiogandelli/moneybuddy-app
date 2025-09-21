@@ -35,8 +35,9 @@ class _InsightsScreenState extends State<InsightsScreen> {
   List<CategoryData> _categories = [];
   List<InsightItem> _insights = [];
   List<Transaction> _recentTransactions = [];
+  List<SubscriptionData> _subscriptions = [];
+  SubscriptionSummary? _subscriptionSummary;
   bool _isLoading = true;
-  bool _isRefreshing = false;
 
   bool _showChatOverlay = false;
 
@@ -63,10 +64,16 @@ class _InsightsScreenState extends State<InsightsScreen> {
       // Try to load from cache first for insights calculations
       final cachedData = InsightsCacheService.getCachedInsights(selectedPeriod);
       if (cachedData != null) {
+        // Still detect subscriptions from live data for most up-to-date info
+        final subscriptions = InsightsService.detectRecurringSubscriptions(transactions);
+        final subscriptionSummary = SubscriptionSummary.fromSubscriptions(subscriptions);
+        
         setState(() {
           _summary = cachedData.summary;
           _categories = cachedData.categories;
           _insights = cachedData.insights;
+          _subscriptions = subscriptions;
+          _subscriptionSummary = subscriptionSummary;
           _isLoading = false;
         });
         return;
@@ -90,6 +97,12 @@ class _InsightsScreenState extends State<InsightsScreen> {
         endDate: dateRange.end,
       );
 
+       
+
+      // Detect recurring subscriptions from all available transactions
+      final subscriptions = SubscriptionData.exampleSubscriptions;
+      final subscriptionSummary = SubscriptionSummary.fromSubscriptions(subscriptions);
+
       // Cache the fresh data
       await InsightsCacheService.cacheInsights(
         period: selectedPeriod,
@@ -102,6 +115,8 @@ class _InsightsScreenState extends State<InsightsScreen> {
         _summary = summary;
         _categories = categories;
         _insights = insights;
+        _subscriptions = subscriptions;
+        _subscriptionSummary = subscriptionSummary;
         _isLoading = false;
       });
     } catch (e) {
@@ -110,20 +125,6 @@ class _InsightsScreenState extends State<InsightsScreen> {
         _isLoading = false;
       });
     }
-  }
-
-  Future<void> _refreshData() async {
-    setState(() {
-      _isRefreshing = true;
-    });
-    
-    // Clear cache and reload
-    await InsightsCacheService.clearCache();
-    await _loadTransactionData();
-    
-    setState(() {
-      _isRefreshing = false;
-    });
   }
 
   @override
@@ -144,21 +145,16 @@ class _InsightsScreenState extends State<InsightsScreen> {
   Widget _buildFloatingActionButton() {
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppStyle.primaryGreen, AppStyle.greenAccent],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(48),
         boxShadow: [
           BoxShadow(
-            color: AppStyle.primaryGreen.withOpacity(0.5),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+            color: AppStyle.primaryGreen.withOpacity(0.3),
+            blurRadius: 70,
+            offset: const Offset(0, 0),
           ),
         ],
       ),
-      child: FloatingActionButton(
+      child: FloatingActionButton.large(
         onPressed: () {
           setState(() {
             _showChatOverlay = true;
@@ -166,10 +162,10 @@ class _InsightsScreenState extends State<InsightsScreen> {
         },
         backgroundColor: Colors.transparent,
         elevation: 0,
-        child: const Icon(
-          Icons.chat_bubble_outline_rounded,
-          color: Colors.white,
-          size: 28,
+        child: Image.asset(
+          'assets/images/monyca.png',
+          width: 100,
+          height: 100,
         ),
       ),
     );
@@ -215,24 +211,6 @@ class _InsightsScreenState extends State<InsightsScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildRefreshButton() {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      child: IconButton(
-        onPressed: _isRefreshing ? null : _refreshData,
-        icon: AnimatedRotation(
-          turns: _isRefreshing ? 1 : 0,
-          duration: const Duration(milliseconds: 1000),
-          child: Icon(
-            Icons.refresh_rounded,
-            color: _isRefreshing ? Colors.grey : Colors.white,
-            size: 28,
-          ),
-        ),
-      ),
     );
   }
 
@@ -373,6 +351,15 @@ class _InsightsScreenState extends State<InsightsScreen> {
             categories: _categories,
             maxCategoriesToShow: 5,
           ),
+        ),
+
+        // Recurring Expenses Section
+        SliverToBoxAdapter(
+          child:  RecurrentExpensesWidget(
+                subscriptions: _subscriptions,
+                totalMonthlyAmount: _subscriptionSummary?.totalMonthlyAmount ?? 100,
+              )
+            
         ),
         // Recent Transactions Card
         SliverToBoxAdapter(
