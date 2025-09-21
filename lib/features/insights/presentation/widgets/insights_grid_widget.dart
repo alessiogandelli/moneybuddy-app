@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/style.dart';
 import '../../../../data/services/insights_service.dart';
+import 'expanded_insight_view.dart';
 
 /// Widget that displays AI-generated insights in a grid layout
 /// Each insight is presented as a colorful card with emoji, title, and description
@@ -38,7 +39,7 @@ class InsightsGridWidget extends StatelessWidget {
         delegate: SliverChildBuilderDelegate(
           (context, index) {
             if (index < displayInsights.length) {
-              return _buildInsightCard(displayInsights[index], index);
+              return _buildInsightCard(context, displayInsights[index], index);
             }
             return null;
           },
@@ -91,33 +92,67 @@ class InsightsGridWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildInsightCard(InsightItem insight, int index) {
+  Widget _buildInsightCard(BuildContext context, InsightItem insight, int index) {
     final colors = _getCardColors();
-    final cardColors = colors[index % colors.length];
+    final cardColors = colors[0];//[index % colors.length];
     
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            cardColors[0].withOpacity(0.1),
-            cardColors[1].withOpacity(0.05),
-          ],
+    return GestureDetector(
+      onTap: () => _openExpandedView(context, insight, cardColors),
+      child: AnimatedScale(
+        scale: 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: Hero(
+          tag: 'insight_${insight.title}',
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    cardColors[0].withOpacity(0.1),
+                    cardColors[1].withOpacity(0.05),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: cardColors[0].withOpacity(0.2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildInsightIcon(insight.emoji, cardColors[0]),
+                  const SizedBox(height: 16),
+                  _buildInsightTitle(insight.title),
+                  const SizedBox(height: 8),
+                  _buildInsightDescription(insight.description),
+                ],
+              ),
+            ),
+          ),
         ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: cardColors[0].withOpacity(0.2)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildInsightIcon(insight.emoji, cardColors[0]),
-          const SizedBox(height: 16),
-          _buildInsightTitle(insight.title),
-          const SizedBox(height: 8),
-          _buildInsightDescription(insight.description),
-        ],
+    );
+  }
+
+  void _openExpandedView(BuildContext context, InsightItem insight, List<Color> cardColors) {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => ExpandedInsightView(
+          insight: insight,
+          cardColors: cardColors,
+        ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          // Only fade the background, let Hero handle the card scaling
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 400),
+        reverseTransitionDuration: const Duration(milliseconds: 300),
+        opaque: false,
       ),
     );
   }

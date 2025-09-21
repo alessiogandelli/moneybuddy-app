@@ -23,7 +23,7 @@ class InsightsHeaderWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.all(20),
-      height: 280,
+      height: 180,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
         gradient: LinearGradient(
@@ -46,35 +46,22 @@ class InsightsHeaderWidget extends StatelessWidget {
       child: Stack(
         children: [
           // Animated background pattern
-          Positioned.fill(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(30),
-              child: Container(
-                decoration: const BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage('assets/images/money_pattern.png'),
-                    fit: BoxFit.cover,
-                    opacity: 0.1,
-                  ),
-                ),
-              ),
-            ),
-          ),
+
           // Hero content
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Financial health indicator
                 
                 _buildFinancialHealthIndicator(),
-                const Spacer(),
+                const SizedBox(height: 12),
                 // Main story
                 _buildMainStory(),
-                const Spacer(),
+              
                 // Interactive balance display
-                _buildBalanceRow(),
+               // _buildBalanceRow(),
               ],
             ),
           ),
@@ -89,7 +76,7 @@ class InsightsHeaderWidget extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.greenAccent.withOpacity(0.2),
+            color: const Color.fromARGB(255, 239, 114, 25).withOpacity(0.7),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: Colors.greenAccent.withOpacity(0.3)),
           ),
@@ -97,18 +84,23 @@ class InsightsHeaderWidget extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.trending_up_rounded,
-                color: Colors.greenAccent,
-                size: 18,
+              getFinancialHealthStatus().toLowerCase().contains('attention')
+                ? Icons.warning_amber_rounded
+                : Icons.trending_up_rounded,
+              color: getFinancialHealthStatus().toLowerCase().contains('attention')
+                ? Colors.amber
+                : Colors.greenAccent,
+              size: 20,
               ),
               const SizedBox(width: 8),
               Text(
-                getFinancialHealthStatus(),
-                style: TextStyle(
-                  color: Colors.greenAccent,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+              getFinancialHealthStatus(),
+              style: TextStyle(
+                color:
+                   Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
               ),
             ],
           ),

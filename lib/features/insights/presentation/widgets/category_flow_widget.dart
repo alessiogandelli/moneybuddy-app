@@ -4,6 +4,8 @@ import '../../../../data/services/insights_service.dart';
 
 /// Widget that displays spending categories with visual progress bars
 /// Shows where the user's money flows with color-coded categories and amounts
+import 'dart:math' as math;
+
 class CategoryFlowWidget extends StatelessWidget {
   final List<CategoryData> categories;
   final int maxCategoriesToShow;
@@ -20,6 +22,18 @@ class CategoryFlowWidget extends StatelessWidget {
       return _buildEmptyState();
     }
 
+    final total = categories.fold<double>(0, (sum, c) => sum + c.amount);
+    final top = categories.take(maxCategoriesToShow).toList();
+    final othersAmount = categories.length > maxCategoriesToShow
+        ? categories.skip(maxCategoriesToShow).fold<double>(0, (s, c) => s + c.amount)
+        : 0.0;
+
+    final slices = <_Slice>[
+      ...top.map((c) => _Slice(name: c.name, amount: c.amount, color: c.color)),
+      if (othersAmount > 0)
+        _Slice(name: 'Others', amount: othersAmount, color: Colors.white24),
+    ];
+
     return Container(
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.all(24),
@@ -33,9 +47,25 @@ class CategoryFlowWidget extends StatelessWidget {
         children: [
           _buildHeader(),
           const SizedBox(height: 24),
-          ...categories
-            .take(maxCategoriesToShow)
-            .map((category) => _buildCategoryFlowBar(category)),
+          Row(
+            children: [
+              Expanded(
+                flex: 5,
+                child: AspectRatio(
+                  aspectRatio: 1,
+                  child: _DonutChart(
+                    slices: slices,
+                    total: total,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                flex: 6,
+                child: _buildLegend(slices),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -44,18 +74,7 @@ class CategoryFlowWidget extends StatelessWidget {
   Widget _buildHeader() {
     return Row(
       children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.orange.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(
-            Icons.donut_large_rounded,
-            color: Colors.orange,
-            size: 24,
-          ),
-        ),
+
         const SizedBox(width: 16),
         const Text(
           'Where Your Money Flows',
@@ -116,26 +135,30 @@ class CategoryFlowWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildCategoryFlowBar(CategoryData category) {
-    final maxAmount = categories.isNotEmpty 
-      ? categories.map((c) => c.amount).reduce((a, b) => a > b ? a : b)
-      : 1.0;
-    final percentage = category.amount / maxAmount;
-    
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildLegend(List<_Slice> slices) {
+    final total = slices.fold<double>(0, (sum, x) => sum + x.amount);
+    return Column(
+      children: slices.map((s) {
+        final percent = total == 0 ? 0 : (s.amount / total * 100).round();
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Row(
             children: [
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: s.color,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  category.name,
+                  s.name,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 16,
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
                   maxLines: 1,
@@ -144,41 +167,111 @@ class CategoryFlowWidget extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                '\$${category.amount.toStringAsFixed(0)}',
+                '$percent%',
                 style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+                  color: Colors.white60,
+                  fontSize: 12,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          _buildProgressBar(percentage, category.color),
-        ],
-      ),
+        );
+      }).toList(),
     );
+  }
+}
+
+class _DonutChart extends StatelessWidget {
+  final List<_Slice> slices;
+  final double total;
+
+  const _DonutChart({
+    required this.slices,
+    required this.total,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final t = total <= 0 ? 0.0 : total;
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        CustomPaint(
+          painter: _DonutPainter(
+            slices: slices,
+            total: t,
+            trackColor: Colors.white.withOpacity(0.08),
+            strokeWidth: 22,
+          ),
+          child: const SizedBox.expand(),
+        ),
+        // Center intentionally left blank (no totals or amounts)
+      ],
+    );
+  }
+}
+
+class _DonutPainter extends CustomPainter {
+  final List<_Slice> slices;
+  final double total;
+  final double strokeWidth;
+  final Color trackColor;
+
+  _DonutPainter({
+    required this.slices,
+    required this.total,
+    required this.strokeWidth,
+    required this.trackColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (math.min(size.width, size.height) - strokeWidth) / 2;
+
+    final trackPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..color = trackColor
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawCircle(center, radius, trackPaint);
+
+    if (total <= 0) return;
+
+    var startAngle = -math.pi / 2;
+    for (final s in slices) {
+      if (s.amount <= 0) continue;
+      final sweep = (s.amount / total) * 2 * math.pi;
+      final paint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..color = s.color
+        ..strokeCap = StrokeCap.butt;
+
+      final rect = Rect.fromCircle(center: center, radius: radius);
+      canvas.drawArc(rect, startAngle, sweep, false, paint);
+      startAngle += sweep;
+    }
   }
 
-  Widget _buildProgressBar(double percentage, Color categoryColor) {
-    return Container(
-      height: 8,
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: FractionallySizedBox(
-        alignment: Alignment.centerLeft,
-        widthFactor: percentage,
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [categoryColor, categoryColor.withOpacity(0.6)],
-            ),
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ),
-      ),
-    );
-  }
+  @override
+  bool shouldRepaint(covariant _DonutPainter oldDelegate) {
+    return oldDelegate.slices != slices ||
+        oldDelegate.total != total ||
+        oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.trackColor != trackColor;
+    }
+}
+
+class _Slice {
+  final String name;
+  final double amount;
+  final Color color;
+
+  _Slice({
+    required this.name,
+    required this.amount,
+    required this.color,
+  });
 }

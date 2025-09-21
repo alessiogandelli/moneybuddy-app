@@ -181,7 +181,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
       backgroundColor: AppStyle.darkBackground,
       title: _buildAppBarTitle(),
       actions: [
-        _buildRefreshButton(),
+        //_buildRefreshButton(),
         _buildPeriodSelector(),
       ],
     );
@@ -207,7 +207,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
         ),
         const SizedBox(width: 12),
         const Text(
-          'Money Story',
+          'moneybuddy',
           style: TextStyle(
             color: Colors.white,
             fontSize: 24,
